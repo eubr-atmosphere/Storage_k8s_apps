@@ -1,0 +1,106 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sqlpass
+data:
+  password: '#s3nh@#'
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.16.0 (0c01309)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: vallum-db
+  name: vallum-db
+spec:
+  serviceName: "vallum-db"
+  # Adjust the number of replicas
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vallum-db
+  template:
+    metadata:
+      labels:
+        app: vallum-db
+        io.kompose.service: vallum-db
+    spec:
+      containers:
+      - env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sshfs-secret
+              key: sshprivkey
+        image: ronnypeterson/vallum-db-test
+        name: vallum-db
+---
+##
+## DB Statful Set
+##
+apiVersion: v1
+kind: Service
+apiVersion: v1
+metadata:
+  name: vallum-db
+spec:
+  selector:
+    app: vallum-db
+  ports:
+  - protocol: TCP
+    port: 22
+    name: ssh
+    targetPort: 22
+
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.16.0 (0c01309)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: vallum
+  name: vallum
+spec:
+  serviceName: "vallum"
+  # Adjust the number of replicas
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vallum
+  template:
+    metadata:
+      labels:
+        app: vallum
+        io.kompose.service: vallum
+    spec:
+      containers:
+      - image: ronnypeterson/vallum-file
+        name: vallumb
+---
+##
+## DB Statful Set
+##
+apiVersion: v1
+kind: Service
+apiVersion: v1
+metadata:
+  name: vallum-db
+spec:
+  selector:
+    app: vallum-db
+  ports:
+  - protocol: TCP
+    port: 9000
+    name: vallum
+    targetPort: 9000
+  - protocol: TCP
+    port: 22
+    name: ssh
+    targetPort: 22

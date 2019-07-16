@@ -1,0 +1,155 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.16.0 (0c01309)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: hadoop-master
+  name: hadoop-master
+spec:
+  serviceName: "hadoop-master"
+  # Adjust the number of replicas
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hadoop-master
+  template:
+    metadata:
+      labels:
+        app: hadoop-master
+        io.kompose.service: hadoop-master
+    spec:
+      containers:
+       - image: mikaelsouza/atmosphere-hdfs-master:2.7.4.1
+         name: hadoop-master
+         resources: {}
+      restartPolicy: Always
+---
+##
+## Master Statful Set
+##
+apiVersion: v1
+kind: Service
+apiVersion: v1
+metadata:
+  name: hadoop-master
+spec:
+  selector:
+    app: hadoop-master
+  ports:
+  - protocol: TCP
+    port: 8020
+    name: "8020"
+    targetPort: 8020
+  - protocol: TCP
+    port: 22
+    name: ssh
+    targetPort: 22
+---
+##
+## Slave Statful Set
+##
+apiVersion: v1
+kind: Service
+apiVersion: v1
+metadata:
+  name: hadoop-slave
+spec:
+  selector:
+    app: hadoop-slave
+  ports:
+  - protocol: TCP
+    port: 9376
+    name: nginx
+    targetPort: 80
+  - protocol: TCP
+    port: 22
+    name: ssh
+    targetPort: 22
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: hdfs-pv-volume-1
+  labels:
+    type: local
+spec:
+#  storageClassName: manual
+  capacity:
+    storage: 128M
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/volume/hdfs"
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: hdfs-pv-volume-2
+  labels:
+    type: local
+spec:
+#  storageClassName: manual
+  capacity:
+    storage: 128M
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/volume/hdfs"
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: hdfs-pv-volume-3
+  labels:
+    type: local
+spec:
+#  storageClassName: manual
+  capacity:
+    storage: 128M
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/volume/hdfs"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.16.0 (0c01309)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: hadoop-slave
+  name: hadoop-slave
+spec:
+  serviceName: "hadoop-slave"
+  # Adjust the number of replicas
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hadoop-slave
+  template:
+    metadata:
+      labels:
+        app: hadoop-slave
+        io.kompose.service: hadoop-slave
+    spec:
+      containers:
+       - image: mikaelsouza/atmosphere-hdfs:2.7.4.1
+         name: hadoop-slave1
+         resources: {}
+         volumeMounts:
+         - name: hdfs
+           mountPath: /mnt/hdfs
+      restartPolicy: Always
+  volumeClaimTemplates:
+  - metadata:
+      name: hdfs
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 32Mi
