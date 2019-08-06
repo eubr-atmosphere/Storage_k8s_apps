@@ -1,0 +1,459 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.16.0 (0c01309)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: hadoop-master
+  name: hadoop-master
+spec:
+  serviceName: "hadoop-master"
+  # Adjust the number of replicas
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hadoop-master
+  template:
+    metadata:
+      labels:
+        app: hadoop-master
+        io.kompose.service: hadoop-master
+    spec:
+      containers:
+       - image: mikaelsouza/atmosphere-hdfs-master:2.7.4.1
+         name: hadoop-master
+         resources: {}
+      restartPolicy: Always
+---
+##
+## Master Statful Set
+##
+apiVersion: v1
+kind: Service
+apiVersion: v1
+metadata:
+  name: hadoop-master
+spec:
+  selector:
+    app: hadoop-master
+  ports:
+  - protocol: TCP
+    port: 8020
+    name: "8020"
+    targetPort: 8020
+  - protocol: TCP
+    port: 22
+    name: ssh
+    targetPort: 22
+---
+##
+## Slave Statful Set
+##
+apiVersion: v1
+kind: Service
+apiVersion: v1
+metadata:
+  name: hadoop-slave
+spec:
+  selector:
+    app: hadoop-slave
+  ports:
+  - protocol: TCP
+    port: 9376
+    name: nginx
+    targetPort: 80
+  - protocol: TCP
+    port: 22
+    name: ssh
+    targetPort: 22
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: hdfs-pv-volume-1
+  labels:
+    type: local
+spec:
+#  storageClassName: manual
+  capacity:
+    storage: 128M
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/volume/hdfs"
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: hdfs-pv-volume-2
+  labels:
+    type: local
+spec:
+#  storageClassName: manual
+  capacity:
+    storage: 128M
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/volume/hdfs"
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: hdfs-pv-volume-3
+  labels:
+    type: local
+spec:
+#  storageClassName: manual
+  capacity:
+    storage: 128M
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/volume/hdfs"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.16.0 (0c01309)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: hadoop-slave
+  name: hadoop-slave
+spec:
+  serviceName: "hadoop-slave"
+  # Adjust the number of replicas
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hadoop-slave
+  template:
+    metadata:
+      labels:
+        app: hadoop-slave
+        io.kompose.service: hadoop-slave
+    spec:
+      containers:
+       - image: mikaelsouza/atmosphere-hdfs:2.7.4.1
+         name: hadoop-slave1
+         resources: {}
+         volumeMounts:
+         - name: hdfs
+           mountPath: /mnt/hdfs
+      restartPolicy: Always
+  volumeClaimTemplates:
+  - metadata:
+      name: hdfs
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 32Mi
+
+#########################################################
+##
+## Secret key
+##
+#########################################################
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sqlpass
+data:
+# echo -n '#s3nh@#' | base64 
+  password: I3MzbmhAIw==
+---
+
+#########################################################
+##
+## Vallum DB
+##
+#########################################################
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vallum-db
+spec:
+  serviceName: "vallum-db"
+  # Adjust the number of replicas
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vallum-db
+  template:
+    metadata:
+      labels:
+        app: vallum-db
+    spec:
+      containers:
+      - env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sqlpass
+              key: password
+        image: ronnypeterson/vallum-db-local
+        name: vallum-db
+---
+apiVersion: v1
+kind: Service
+apiVersion: v1
+metadata:
+  name: vallum-db
+spec:
+  selector:
+    app: vallum-db
+  ports:
+  - protocol: TCP
+    port: 22
+    name: ssh
+    targetPort: 22
+  - protocol: TCP
+    port: 3306
+    name: mysql
+    targetPort: 3306
+---
+
+#########################################################
+##
+## Vallum Repo
+##
+#########################################################
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  creationTimestamp: null
+  name: vallum-repo
+spec:
+  serviceName: "vallum-repo"
+  # Adjust the number of replicas
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vallum-repo
+  template:
+    metadata:
+      labels:
+        app: vallum-repo
+    spec:
+      containers:
+      - image: ronnypeterson/vallum-repo-local
+        name: vallum-repo
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sqlpass
+              key: password
+---
+apiVersion: v1
+kind: Service
+apiVersion: v1
+metadata:
+  name: vallum-repo
+spec:
+  selector:
+    app: vallum-repo
+  ports:
+  - protocol: TCP
+    port: 22
+    name: ssh
+    targetPort: 22
+---
+
+#########################################################
+##
+## Vallum Audit-db
+##
+#########################################################
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  creationTimestamp: null
+  name: vallum-audit-db
+spec:
+  serviceName: "vallum-audit-db"
+  # Adjust the number of replicas
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vallum-audit-db
+  template:
+    metadata:
+      labels:
+        app: vallum-audit-db
+    spec:
+      containers:
+      - image: ronnypeterson/vallum-audit-db
+        name: vallum-audit-db
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sqlpass
+              key: password
+#        command: ["/usr/bin/tail"] 
+#        args: ["-f","/dev/null"]
+# This field requires labelling the nodes with AES support > kubectl label nodes wn1.localdomain aes=true
+      nodeSelector:
+        aes: "true"
+---
+apiVersion: v1
+kind: Service
+apiVersion: v1
+metadata:
+  name: vallum-audit-db
+spec:
+  selector:
+    app: vallum-audit-db
+  ports:
+  - protocol: TCP
+    port: 22
+    name: ssh
+    targetPort: 22
+  - protocol: TCP
+    port: 3306
+    name: mysql
+    targetPort: 3306
+---
+
+#########################################################
+##
+## Vallum Audit-local
+##
+#########################################################
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  creationTimestamp: null
+  name: vallum-audit
+spec:
+  serviceName: "vallum-audit"
+  # Adjust the number of replicas
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vallum-audit
+  template:
+    metadata:
+      labels:
+        app: vallum-audit
+    spec:
+      containers:
+      - image: ronnypeterson/vallum-audit-local
+        name: vallum-audit
+---
+apiVersion: v1
+kind: Service
+apiVersion: v1
+metadata:
+  name: vallum-audit
+spec:
+  selector:
+    app: vallum-audit
+  ports:
+  - protocol: TCP
+    port: 22
+    name: ssh
+    targetPort: 22
+---
+
+#########################################################
+##
+## Vallum Privacy
+##
+#########################################################
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  creationTimestamp: null
+  name: vallum-privacy
+spec:
+  serviceName: "vallum-privacy"
+  # Adjust the number of replicas
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vallum-privacy
+  template:
+    metadata:
+      labels:
+        app: vallum-privacy
+    spec:
+      containers:
+      - image: ronnypeterson/vallum-privacy-local
+        name: vallum-privacy
+---
+apiVersion: v1
+kind: Service
+apiVersion: v1
+metadata:
+  name: vallum-privacy
+spec:
+  selector:
+    app: vallum-privacy
+  ports:
+  - protocol: TCP
+    port: 22
+    name: ssh
+    targetPort: 22
+---
+
+
+#########################################################
+##
+## Vallum local
+##
+#########################################################
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  creationTimestamp: null
+  name: vallum
+spec:
+  serviceName: "vallum"
+  # Adjust the number of replicas
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vallum
+  template:
+    metadata:
+      labels:
+        app: vallum
+    spec:
+      containers:
+      - image: ronnypeterson/vallum-local
+        name: vallum
+---
+##
+## DB Statful Set
+##
+apiVersion: v1
+kind: Service
+apiVersion: v1
+metadata:
+  name: vallum
+spec:
+  selector:
+    app: vallum
+  ports:
+  - protocol: TCP
+    port: 9000
+    name: vallum
+    targetPort: 9000
+  - protocol: TCP
+    port: 22
+    name: ssh
+    targetPort: 22
