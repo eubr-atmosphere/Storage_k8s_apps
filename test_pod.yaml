@@ -2,10 +2,25 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: vallum-test
+  labels:
+    app: vallum-test
 spec:
   containers:
   - name: vallum-test
-    image: ronnypeterson/test-local
+    image: ronnypeterson/vallum-test
     command: [ "usr/bin/tail" ]
     args: ["-f", "/dev/null"]
-
+---
+apiVersion: v1
+kind: Service
+apiVersion: v1
+metadata:
+  name: vallum-test
+spec:
+  selector:
+    app: vallum-test
+  ports:
+  - protocol: TCP
+    port: 1234
+    name: ssh
+    targetPort: 1234
