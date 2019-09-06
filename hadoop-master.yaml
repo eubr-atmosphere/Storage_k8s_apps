@@ -194,13 +194,10 @@ spec:
     app: hadoop-master
   ports:
   - protocol: TCP
-<<<<<<< HEAD
     port: 8020
     name: hadoop
-    targetPort: 8020
+    targetPort: 9001
   - protocol: TCP
-=======
->>>>>>> 0ea3a75d20cdadef4f495cb5c56c44efffe44216
     port: 9870
     name: "hadoop-master"
     targetPort: 9870
