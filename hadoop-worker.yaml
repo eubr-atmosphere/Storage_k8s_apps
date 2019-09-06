@@ -1,0 +1,120 @@
+##
+## Slave Statful Set
+##
+apiVersion: v1
+kind: Service
+apiVersion: v1
+metadata:
+  name: datanode
+spec:
+  selector:
+    app: datanode
+  ports:
+  - protocol: TCP
+    port: 22
+    name: ssh
+    targetPort: 22
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: datanode
+spec:
+  serviceName: "datanode"
+  # Adjust the number of replicas
+  replicas: 3
+  selector:
+    matchLabels:
+      app: datanode
+  template:
+    metadata:
+      labels:
+        app: datanode
+    spec:
+      restartPolicy: Always
+      containers:
+       - image: bde2020/hadoop-datanode
+         name: datanode
+         env: 
+           - name: CORE_CONF_fs_defaultFS
+             valueFrom:
+               configMapKeyRef:
+                 name: hadoop-env
+                 key: CORE_CONF_fs_defaultFS
+           - name: CORE_CONF_hadoop_http_staticuser_user
+             valueFrom:
+               configMapKeyRef:
+                 name: hadoop-env
+                 key: CORE_CONF_hadoop_http_staticuser_user
+           - name: CORE_CONF_hadoop_proxyuser_hue_hosts
+             valueFrom:
+               configMapKeyRef:
+                 name: hadoop-env
+                 key: CORE_CONF_hadoop_proxyuser_hue_hosts
+           - name: CORE_CONF_hadoop_proxyuser_hue_groups
+             valueFrom:
+               configMapKeyRef:
+                 name: hadoop-env
+                 key: CORE_CONF_hadoop_proxyuser_hue_groups
+           - name: CORE_CONF_io_compression_codecs
+             valueFrom:
+               configMapKeyRef:
+                 name: hadoop-env
+                 key: CORE_CONF_io_compression_codecs
+           - name: HDFS_CONF_dfs_webhdfs_enabled
+             valueFrom:
+               configMapKeyRef:
+                 name: hadoop-env
+                 key: HDFS_CONF_dfs_webhdfs_enabled
+           - name: HDFS_CONF_dfs_permissions_enabled
+             valueFrom:
+               configMapKeyRef:
+                 name: hadoop-env
+                 key: HDFS_CONF_dfs_permissions_enabled
+           - name: HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check
+             valueFrom:
+               configMapKeyRef:
+                 name: hadoop-env
+                 key: HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check
+           - name: CLUSTER_NAME
+             valueFrom:
+               configMapKeyRef:
+                 name: hadoop-env
+                 key: CLUSTER_NAME
+           - name: HDFS_NAMENODE_USER
+             valueFrom:
+               configMapKeyRef:
+                 name: hadoop-env
+                 key: HDFS_NAMENODE_USER
+           - name: HDFS_DATANODE_USER
+             valueFrom:
+               configMapKeyRef:
+                 name: hadoop-env
+                 key: HDFS_DATANODE_USER
+           - name: HDFS_SECONDARYNAMENODE_USER
+             valueFrom:
+               configMapKeyRef:
+                 name: hadoop-env
+                 key: HDFS_SECONDARYNAMENODE_USER
+           - name: YARN_RESOURCEMANAGER_USER
+             valueFrom:
+               configMapKeyRef:
+                 name: hadoop-env
+                 key: YARN_RESOURCEMANAGER_USER
+           - name: YARN_NODEMANAGER_USER
+             valueFrom:
+               configMapKeyRef:
+                 name: hadoop-env
+                 key: YARN_NODEMANAGER_USER
+         resources: {}
+         volumeMounts:
+         - name: hdfs
+           mountPath: /hadoop/dfs/data
+  volumeClaimTemplates:
+  - metadata:
+      name: hdfs
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 32Mi
