@@ -1,0 +1,207 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hadoop-env
+data:
+  CORE_CONF_fs_defaultFS: "hdfs://hadoop-master.default.svc.cluster.local:9001"
+  CORE_CONF_hadoop_http_staticuser_user: root
+  CORE_CONF_hadoop_proxyuser_hue_hosts: "*"
+  CORE_CONF_hadoop_proxyuser_hue_groups: "*"
+  CORE_CONF_io_compression_codecs: org.apache.hadoop.io.compress.SnappyCodec
+  HDFS_CONF_dfs_webhdfs_enabled: "true"
+  HDFS_CONF_dfs_permissions_enabled: "false"
+  HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check: "false"
+  CLUSTER_NAME: test
+  HDFS_NAMENODE_USER: root
+  HDFS_DATANODE_USER: root
+  HDFS_SECONDARYNAMENODE_USER: root
+  YARN_RESOURCEMANAGER_USER: root
+  YARN_NODEMANAGER_USER: root
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: hdfs-pv-volume-0
+  labels:
+    type: local
+spec:
+#  storageClassName: manual
+  capacity:
+    storage: 128M
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/volume/hdfs"
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: hdfs-pv-volume-1
+  labels:
+    type: local
+spec:
+#  storageClassName: manual
+  capacity:
+    storage: 128M
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/volume/hdfs"
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: hdfs-pv-volume-2
+  labels:
+    type: local
+spec:
+#  storageClassName: manual
+  capacity:
+    storage: 128M
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/volume/hdfs"
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: hdfs-pv-volume-3
+  labels:
+    type: local
+spec:
+#  storageClassName: manual
+  capacity:
+    storage: 128M
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/volume/hdfs"
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: namenode-claim
+spec:
+#  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 32M
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hadoop-master
+  labels:
+    app: hadoop-master
+spec:
+  restartPolicy: Always
+  containers:
+  - name: hadoop-master
+    image: bde2020/hadoop-namenode
+    resources: {}
+    env: 
+      - name: CORE_CONF_fs_defaultFS
+        valueFrom:
+          configMapKeyRef:
+            name: hadoop-env
+            key: CORE_CONF_fs_defaultFS
+      - name: CORE_CONF_hadoop_http_staticuser_user
+        valueFrom:
+          configMapKeyRef:
+            name: hadoop-env
+            key: CORE_CONF_hadoop_http_staticuser_user
+      - name: CORE_CONF_hadoop_proxyuser_hue_hosts
+        valueFrom:
+          configMapKeyRef:
+            name: hadoop-env
+            key: CORE_CONF_hadoop_proxyuser_hue_hosts
+      - name: CORE_CONF_hadoop_proxyuser_hue_groups
+        valueFrom:
+          configMapKeyRef:
+            name: hadoop-env
+            key: CORE_CONF_hadoop_proxyuser_hue_groups
+      - name: CORE_CONF_io_compression_codecs
+        valueFrom:
+          configMapKeyRef:
+            name: hadoop-env
+            key: CORE_CONF_io_compression_codecs
+      - name: HDFS_CONF_dfs_webhdfs_enabled
+        valueFrom:
+          configMapKeyRef:
+            name: hadoop-env
+            key: HDFS_CONF_dfs_webhdfs_enabled
+      - name: HDFS_CONF_dfs_permissions_enabled
+        valueFrom:
+          configMapKeyRef:
+            name: hadoop-env
+            key: HDFS_CONF_dfs_permissions_enabled
+      - name: HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check
+        valueFrom:
+          configMapKeyRef:
+            name: hadoop-env
+            key: HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check
+      - name: CLUSTER_NAME
+        valueFrom:
+          configMapKeyRef:
+            name: hadoop-env
+            key: CLUSTER_NAME
+      - name: HDFS_NAMENODE_USER
+        valueFrom:
+          configMapKeyRef:
+            name: hadoop-env
+            key: HDFS_NAMENODE_USER
+      - name: HDFS_DATANODE_USER
+        valueFrom:
+          configMapKeyRef:
+            name: hadoop-env
+            key: HDFS_DATANODE_USER
+      - name: HDFS_SECONDARYNAMENODE_USER
+        valueFrom:
+          configMapKeyRef:
+            name: hadoop-env
+            key: HDFS_SECONDARYNAMENODE_USER
+      - name: YARN_RESOURCEMANAGER_USER
+        valueFrom:
+          configMapKeyRef:
+            name: hadoop-env
+            key: YARN_RESOURCEMANAGER_USER
+      - name: YARN_NODEMANAGER_USER
+        valueFrom:
+          configMapKeyRef:
+            name: hadoop-env
+            key: YARN_NODEMANAGER_USER
+    volumeMounts:
+    - name: hdfs
+      mountPath: /hadoop/dfs/data
+  volumes:
+    - name: hdfs
+      persistentVolumeClaim:
+        claimName: namenode-claim
+---
+##
+## Master Statful Set
+##
+apiVersion: v1
+kind: Service
+apiVersion: v1
+metadata:
+  name: hadoop-master
+spec:
+  selector:
+    app: hadoop-master
+  ports:
+  - protocol: TCP
+    port: 9870
+    name: "hadoop-master"
+    targetPort: 9870
+  - protocol: TCP
+    port: 22
+    name: ssh
+    targetPort: 22
+  - protocol: TCP
+    port: 9001
+    name: hdfs
+    targetPort: 9001
