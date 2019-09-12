@@ -48,36 +48,6 @@ spec:
   hostPath:
     path: "/mnt/volume/hdfs"
 ---
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: hdfs-pv-volume-2
-  labels:
-    type: local
-spec:
-#  storageClassName: manual
-  capacity:
-    storage: 128M
-  accessModes:
-    - ReadWriteOnce
-  hostPath:
-    path: "/mnt/volume/hdfs"
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: hdfs-pv-volume-3
-  labels:
-    type: local
-spec:
-#  storageClassName: manual
-  capacity:
-    storage: 128M
-  accessModes:
-    - ReadWriteOnce
-  hostPath:
-    path: "/mnt/volume/hdfs"
----
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
