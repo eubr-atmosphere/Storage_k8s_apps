@@ -27,6 +27,8 @@ metadata:
   labels:
     app: vallum-db
 spec:
+    nodeSelector:
+      region: brazil
     containers:
     - env:
       - name: MYSQL_ROOT_PASSWORD
@@ -74,6 +76,8 @@ metadata:
   labels:
     app: vallum-repo
 spec:
+  nodeSelector:
+    region: brazil
   containers:
   - image: ronnypeterson/vallum-repo-local
     imagePullPolicy: Always
@@ -135,10 +139,11 @@ spec:
       value: '%'
     - name: MYSQL_DATABASE
       value: vallum_audit
+#    command: ["/usr/bin/tail"] 
+#    args: ["-f","/dev/null"]
   nodeSelector:
     aes: "true"
-#        command: ["/usr/bin/tail"] 
-#        args: ["-f","/dev/null"]
+    region: brazil
 # This field requires labelling the nodes with AES support > kubectl label nodes wn1.localdomain aes=true
 ---
 apiVersion: v1
@@ -172,7 +177,9 @@ metadata:
   name: vallum-audit
   labels:
     app: vallum-audit
-spec:
+spec: 
+  nodeSelector:
+    region: brazil
   containers:
   - image: ronnypeterson/vallum-audit-local
     imagePullPolicy: Always
@@ -211,6 +218,8 @@ metadata:
   labels:
      app: vallum-privacy
 spec:
+  nodeSelector:
+    region: brazil
   containers:
   - image: ronnypeterson/vallum-privacy-local
     imagePullPolicy: Always
@@ -250,6 +259,8 @@ metadata:
   labels:
     app: vallum
 spec:
+  nodeSelector:
+    region: brazil
   containers:
   - image: ronnypeterson/vallum-local
     imagePullPolicy: Always
