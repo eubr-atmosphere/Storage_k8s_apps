@@ -144,6 +144,16 @@ spec:
   nodeSelector:
     aes: "true"
     region: brazil
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                - vallum-db
+          topologyKey: "kubernetes.io/hostname"
 # This field requires labelling the nodes with AES support > kubectl label nodes wn1.localdomain aes=true
 ---
 apiVersion: v1
