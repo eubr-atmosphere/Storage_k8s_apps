@@ -153,6 +153,10 @@ spec:
                 operator: In
                 values:
                 - vallum-db
+                - vallum-repo
+                - vallum-audit
+                - vallum-privacy
+                - vallum
           topologyKey: "kubernetes.io/hostname"
 # This field requires labelling the nodes with AES support > kubectl label nodes wn1.localdomain aes=true
 ---
