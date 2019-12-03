@@ -35,12 +35,9 @@ spec:
       containers:
        - image: bde2020/hadoop-datanode
          name: datanode
-<<<<<<< HEAD
 #         args: 
 #           - sleep 
 #           - "3600"
-=======
->>>>>>> 0ea3a75d20cdadef4f495cb5c56c44efffe44216
          env: 
            - name: CORE_CONF_fs_defaultFS
              valueFrom:
